@@ -22,11 +22,13 @@ contract BettingContract {
 
 	/* Add any events you think are necessary */
 	event BetMade(address gambler);
-	event BetClosed();
+	event BetClosed(); /* same as MadeDecision for oracle?*/
+	event WithdrawlMade(address gambler, uint amt) /**/
+	event GameReset(); /**/
 
 	/* Uh Oh, what are these? */
-	modifier OwnerOnly() {}
-	modifier OracleOnly() {}
+	modifier OwnerOnly() {require(owner); require(owner != gamblerA); require(owner != gamblerB); _;} /**/
+	modifier OracleOnly() {require(oracle); require(oracle != gamblerA); require(owner != gamblerB; _;} /**/
 
 	/* Constructor function, where owner and outcomes are set */
 	function BettingContract(uint[] _outcomes) {
@@ -37,38 +39,73 @@ contract BettingContract {
 	/* Owner chooses their trusted Oracle */
 	function chooseOracle(address _oracle) OwnerOnly() returns (address) {
 		oracle = _oracle; /**/
-		return oracle; /** or do something with modifier? */
+		return oracle; /**/
 	}
 
 	/* Gamblers place their bets, preferably after calling checkOutcomes */
 	function makeBet(uint _outcome) payable returns (bool) {
-		/**/
-		if (checkOutcomes()) {
-			bets[msg.sender] = Bet();
-			bets[msg.sender].outcome = _outcome;
-			bets[msg.sender].amount = msg.value;
-			bets[msg.sender].initialized = msg.value; /*or maybe some bool?*/
-			return True;
-		} else {
-			return False;
+		/*better way instead of all these requires*/
+		address better = msg.sender;
+		require(better != oracle);
+		bool outcome_found = false;
+		for (int i = 0; i < outcomes.length; i++) {
+			if (outcomes[i] == _outcome) {
+				outcome_found = true;
+			}
 		}
+		require(outcome_found);
+		require(!gamblerA || !gamblerB);
+		if (!gamblerA) {
+			gamblerA = better;
+		} else {
+			gamblerB = better;
+		}
+		require(!bets[better].initialized);
+		bets[better].outcome = _outcome;
+		bets[better].amount = msg.value;
+		bets[better].initialized = 1;
+		BetMade(better);
+		return true; /** where return false? what require return? */
 	}
 
 	/* The oracle chooses which outcome wins */
 	function makeDecision(uint _outcome) OracleOnly() {
-		/**/
+		/*where use BetClosed()*/
+		require(bets[gamblerA].initialized == 1 && bets[gamblerB].initialized == 1);
+		uint outcomeA = bets[gamblerA].outcome;
+		uint amountA = bets[gamblerA].amount;
+		uint outcomeB = bets[gamblerB].outcome;
+		uint amountB = bets[gamblerB].amount;
+		if (outcomeA == outcomeB) {
+			/*reinburst both*/
+			winnings[gamblerA] = amountA;
+			winnings[gamblerB] = amountB;
+		}
+		if (outcomeA != _outcome && outcomeB != _outcome) {
+			winnings[oracle] = amountA + amountB;
+		}
+		/* how define total winnings*/
+		if (outcomeA == _outcome) {
+			winnings[A] += (amountA + amountB); /**.
+		} else {
+			winnings[B] += (amountA + amountB); /**.
+		}
+		
 		outcomes[msg.sender] = _outcome;
 	}
 
 	/* Allow anyone to withdraw their winnings safely (if they have enough) */
 	function withdraw(uint withdrawAmount) returns (uint remainingBal) {
 		/**/
-		if (msg.sender.value >= withdrawAmount):
-			msg.sender.send(withdrawAmount);
-			msg.sender.value -= withdrawAmount;
-			BetClosed();
-		return msg.sender.value;
-		
+		address withdrawer = msg.sender
+		if (withdrawAmount > 0 && (withdrawer == gamblerA || withdrawer == gamblerB || withdrawer == oracle) && withdrawAmount <= checkWinnings()) {
+			winnings[withdrawer] -= withdrawAmount;
+			if (!withdrawer.send(withdrawAmount)) {
+				revert();
+			}
+			WithdrawlMade(withdrawer, withdrawAmount);
+		}
+		return winnings[withdrawer];		
 	}
 	
 	/* Allow anyone to check the outcomes they can bet on */
@@ -84,9 +121,11 @@ contract BettingContract {
 
 	/* Call delete() to reset certain state variables. Which ones? That's upto you to decide */
 	function contractReset() private {
-		/*check winnings and withdraw them too?*/
-		delete(outcomes);
+		/* keep winnings? delete outcomes? bets??*/
+		delete(gamblerA);
+		delete(gamblerB);
 		delete(bets);
+		GameReset();
 	}
 
 	/* Fallback function */
