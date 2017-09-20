@@ -44,7 +44,11 @@ contract BettingContract {
 	function makeBet(uint _outcome) payable returns (bool) {
 		/**/
 		if (checkOutcomes()) {
-			bets[msg.sender] = _outcome;
+			bets[msg.sender] = Bet();
+			bets[msg.sender].outcome = _outcome;
+			bets[msg.sender].amount = msg.value;
+			bets[msg.sender].initialized = msg.value; /*or maybe some bool?*/
+			return True;
 		} else {
 			return False;
 		}
@@ -53,6 +57,7 @@ contract BettingContract {
 	/* The oracle chooses which outcome wins */
 	function makeDecision(uint _outcome) OracleOnly() {
 		/**/
+		outcomes[msg.sender] = _outcome;
 	}
 
 	/* Allow anyone to withdraw their winnings safely (if they have enough) */
@@ -61,6 +66,7 @@ contract BettingContract {
 		if (msg.sender.value >= withdrawAmount):
 			msg.sender.send(withdrawAmount);
 			msg.sender.value -= withdrawAmount;
+			BetClosed();
 		return msg.sender.value;
 		
 	}
@@ -78,7 +84,7 @@ contract BettingContract {
 
 	/* Call delete() to reset certain state variables. Which ones? That's upto you to decide */
 	function contractReset() private {
-		/**/
+		/*check winnings and withdraw them too?*/
 		delete(outcomes);
 		delete(bets);
 	}
