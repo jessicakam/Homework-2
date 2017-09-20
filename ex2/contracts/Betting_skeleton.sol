@@ -30,34 +30,57 @@ contract BettingContract {
 
 	/* Constructor function, where owner and outcomes are set */
 	function BettingContract(uint[] _outcomes) {
+		owner = msg.sender; /**/
+		outcomes = _outcomes; /**/
 	}
 
 	/* Owner chooses their trusted Oracle */
 	function chooseOracle(address _oracle) OwnerOnly() returns (address) {
+		oracle = _oracle; /**/
+		return oracle; /** or do something with modifier? */
 	}
 
 	/* Gamblers place their bets, preferably after calling checkOutcomes */
 	function makeBet(uint _outcome) payable returns (bool) {
+		/**/
+		if (checkOutcomes()) {
+			bets[msg.sender] = _outcome;
+		} else {
+			return False;
+		}
 	}
 
 	/* The oracle chooses which outcome wins */
 	function makeDecision(uint _outcome) OracleOnly() {
+		/**/
 	}
 
 	/* Allow anyone to withdraw their winnings safely (if they have enough) */
 	function withdraw(uint withdrawAmount) returns (uint remainingBal) {
+		/**/
+		if (msg.sender.value >= withdrawAmount):
+			msg.sender.send(withdrawAmount);
+			msg.sender.value -= withdrawAmount;
+		return msg.sender.value;
+		
 	}
 	
 	/* Allow anyone to check the outcomes they can bet on */
 	function checkOutcomes() constant returns (uint[]) {
+		return outcomes; /**/
 	}
 	
 	/* Allow anyone to check if they won any bets */
 	function checkWinnings() constant returns(uint) {
+		/**/
+		return winnings[msg.sender];
 	}
 
 	/* Call delete() to reset certain state variables. Which ones? That's upto you to decide */
 	function contractReset() private {
+		/**/
+		delete(outcomes);
+		delete(bets);
 	}
 
 	/* Fallback function */
