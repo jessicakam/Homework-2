@@ -8,7 +8,7 @@ contract Greeter {
      */
     /// @dev Contract constructor that sets the global `greeting` variable
     /// @param _greeting A String value to set to the global `greeting`
-    function Greeter(string _greeting) public {
+    function greeter(string _greeting) public {
         greeting = _greeting;
     }
 
