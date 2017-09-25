@@ -12,6 +12,10 @@ contract Greeter {
         greeting = _greeting;
     }
 
+    function hello () {
+        
+    }
+
     /*
      * Greet function
      */
