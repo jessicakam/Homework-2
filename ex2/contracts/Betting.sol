@@ -1,6 +1,6 @@
 pragma solidity ^0.4.15;
 
-contract BettingContract {
+contract Betting {
 	/* Standard state variables */
 	address owner;
 	address public gamblerA;
@@ -24,25 +24,26 @@ contract BettingContract {
 
 	/* Add any events you think are necessary */
 	event BetMade(address gambler);
-	event BetClosed(); /* same as MadeDecision for oracle?*/
-	event WithdrawlMade(address gambler, uint amt); /**/
-	event GameReset(); /**/
+	event BetClosed();
+	event WithdrawlMade(address gambler, uint amt);
+	event GameReset();
 
 
 	/* Uh Oh, what are these? */
-	modifier OwnerOnly() {require(address(owner) != 0); require(owner != gamblerA); require(owner != gamblerB); _;} /* */
-	modifier OracleOnly() {require(address(oracle) != 0); require(oracle != gamblerA); require(owner != gamblerB); _;} /* */
+	modifier OwnerOnly() {require(address(owner) != 0); require(owner != gamblerA); require(owner != gamblerB); _;}
+	modifier OracleOnly() {require(address(oracle) != 0); require(oracle != gamblerA); require(owner != gamblerB); _;}
 
 
 	/* Constructor function, where owner and outcomes are set */
-	function BettingContract(uint[] _outcomes) {
-		owner = msg.sender; /**/
-		outcomes = _outcomes; /**/
+	function Betting(uint[] _outcomes) {
+		owner = msg.sender; 
+		outcomes = _outcomes; 
 	}
 
 
 	/* Owner chooses their trusted Oracle */
 	function chooseOracle(address _oracle) OwnerOnly() returns (address) {
+		require(_oracle != owner);
 		oracle = _oracle; 
 		return oracle;
 	}
@@ -106,9 +107,7 @@ contract BettingContract {
 		address withdrawer = msg.sender;
 		if (withdrawAmount > 0 && (withdrawer == gamblerA || withdrawer == gamblerB || withdrawer == oracle) && withdrawAmount <= checkWinnings()) {
 			winnings[withdrawer] -= withdrawAmount;
-			if (!withdrawer.send(withdrawAmount)) {
-				revert();
-			}
+			withdrawer.transfer(withdrawAmount);
 			WithdrawlMade(withdrawer, withdrawAmount);
 		}
 		return winnings[withdrawer];
